@@ -1,13 +1,6 @@
 package extension.gamecenter;
 
 
-import flash.display.BitmapData;
-import flash.events.Event;
-import flash.events.EventDispatcher;
-import flash.geom.Rectangle;
-import flash.utils.ByteArray;
-
-
 class GameCenter {
 	
 	
@@ -34,11 +27,6 @@ class GameCenter {
 		initialize ();
 		
 		#if (ios || mac)
-		#if (openfl_next || openfl_legacy || nme)
-			openfl.Lib.pause ();
-		#else
-			openfl.system.System.pause ();
-		#end
 		gamecenter_authenticate ();
 		#end
 		
@@ -123,12 +111,6 @@ class GameCenter {
 	private static function notifyListeners (inEvent:Dynamic) {
 		
 		#if (ios || mac)
-		
-		#if (openfl_next || openfl_legacy || nme)
-			openfl.Lib.resume ();
-		#else
-			openfl.system.System.resume ();
-		#end
 		
 		var type = Std.string (Reflect.field (inEvent, "type"));
 		var data1 = Std.string (Reflect.field (inEvent, "data1"));

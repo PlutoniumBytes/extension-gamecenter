@@ -1,9 +1,5 @@
 package extension.gamecenter;
 
-
-import flash.events.Event;
-
-
 class GameCenterEvent extends Event {
 	
 	public static inline var DISABLED = "disabled";
