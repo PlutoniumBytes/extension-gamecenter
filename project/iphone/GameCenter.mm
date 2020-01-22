@@ -222,7 +222,7 @@ namespace gamecenter {
 						NSString* urlString = [publicKeyUrl absoluteString];
 
 						char timestampBuf[256];
-                        snprintf(timestampBuf, sizeof timestampBuf, "%"PRIu64, timestamp);
+                        snprintf(timestampBuf, sizeof timestampBuf, "%" PRIu64, timestamp);
                         NSLog(@"SALT: %@", salt);
 
 						//[self verifyPlayer:localPlayer.playerID publicKeyUrl:publicKeyUrl signature:signature salt:salt timestamp:timestamp];
@@ -325,7 +325,7 @@ namespace gamecenter {
        			sendGameCenterEvent(ON_GET_PLAYER_PHOTO_FAILURE, playerID, "", "", "");
             } 
             if (players != nil && [players count]>0) {
-				[[players firstObject] loadPhotoForSize:1 withCompletionHandler: ^(UIImage *photo, NSError *error2){
+				[[players firstObject] loadPhotoForSize:GKPhotoSizeNormal withCompletionHandler: ^(UIImage *photo, NSError *error2){
 					if (error2 != nil) {
       					NSLog(@"error loading photo! %@", [error2 localizedDescription]);
        					sendGameCenterEvent(ON_GET_PLAYER_PHOTO_FAILURE, playerID, "", "", "");
