@@ -25,11 +25,14 @@ class GameCenter {
 	public static function authenticate ():Void {
 		
 		initialize ();
-		
-		#if (ios || mac)
-		gamecenter_authenticate ();
+		#if ( ( ios || mac ) && flash )
+			#if (openfl_next || openfl_legacy || nme)
+				openfl.Lib.pause ();
+			#else
+				openfl.system.System.pause ();
+			#end
+			gamecenter_authenticate ();
 		#end
-		
 	}
 	
 	
@@ -109,9 +112,13 @@ class GameCenter {
 	
 	
 	private static function notifyListeners (inEvent:Dynamic) {
-		
-		#if (ios || mac)
-		
+		#if ( ( ios || mac ) && flash )
+			#if (openfl_next || openfl_legacy || nme)
+				openfl.Lib.resume ();
+			#else
+				openfl.system.System.resume ();
+			#end
+
 		var type = Std.string (Reflect.field (inEvent, "type"));
 		var data1 = Std.string (Reflect.field (inEvent, "data1"));
 		var data2 = Std.string (Reflect.field (inEvent, "data2"));
