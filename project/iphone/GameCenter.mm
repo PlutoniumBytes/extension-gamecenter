@@ -10,6 +10,12 @@ extern "C" void sendGameCenterEvent (const char* event, const char* data1, const
 
 typedef void (*FunctionType)();
 
+void sendEventWrap(const char* type, const char* data1, const char* data2, const char* data3, const char* data4){
+	dispatch_async(dispatch_get_main_queue(), ^{
+		sendGameCenterEvent(type, data1, data2, data3, data4);
+	});
+}
+
 
 @interface GKViewDelegate : NSObject <GKAchievementViewControllerDelegate,GKLeaderboardViewControllerDelegate> {}
 	
@@ -139,9 +145,6 @@ namespace gamecenter {
 	
 	//USER
 	
-	
-	
-	
 	void initializeGameCenter () {
 		
 		if (isInitialized == 1) {
@@ -192,7 +195,7 @@ namespace gamecenter {
 		if (!isGameCenterAvailable ()) {
 			
 			NSLog (@"Game Center: is not available");
-			sendGameCenterEvent (DISABLED, "", "", "", "");
+			sendEventWrap (DISABLED, "", "", "", "");
 			return;
 			
 		}
@@ -215,7 +218,7 @@ namespace gamecenter {
 						if(error != nil) {
 						    // some sort of error, can't authenticate with url/signature/salt
 						    // but authentication did succeed according to GameCenter so report it
-						    sendGameCenterEvent (AUTH_SUCCESS, "", "", "", "");
+						    sendEventWrap (AUTH_SUCCESS, "", "", "", "");
 						    return;
 						}
 
@@ -226,7 +229,7 @@ namespace gamecenter {
                         NSLog(@"SALT: %@", salt);
 
 						//[self verifyPlayer:localPlayer.playerID publicKeyUrl:publicKeyUrl signature:signature salt:salt timestamp:timestamp];
-						sendGameCenterEvent (AUTH_SUCCESS, [urlString UTF8String], [[signature base64EncodedStringWithOptions:0] UTF8String], [[salt base64EncodedStringWithOptions:0] UTF8String], timestampBuf);
+						sendEventWrap (AUTH_SUCCESS, [urlString UTF8String], [[signature base64EncodedStringWithOptions:0] UTF8String], [[salt base64EncodedStringWithOptions:0] UTF8String], timestampBuf);
 					}];
 
 				} else if (viewcontroller != nil) {
@@ -240,7 +243,7 @@ namespace gamecenter {
 					NSLog (@"Game Center: Error occurred authenticating-");
 					NSLog (@"  %@", [error localizedDescription]);
 					NSString* errorDescription = [error localizedDescription];
-					sendGameCenterEvent (AUTH_FAILURE, [errorDescription UTF8String], "", "", "");
+					sendEventWrap (AUTH_FAILURE, [errorDescription UTF8String], "", "", "");
 					
 				}
 				
@@ -249,7 +252,7 @@ namespace gamecenter {
 		} else {
 			
 			NSLog (@"Already authenticated!");
-			sendGameCenterEvent (AUTH_ALREADY, "", "", "", "");
+			sendEventWrap (AUTH_ALREADY, "", "", "", "");
 			
 		}
 		
@@ -296,7 +299,7 @@ namespace gamecenter {
 			[lp loadFriendPlayersWithCompletionHandler:^(NSArray <GKPlayer *> *friends, NSError *error) {
             	if (error != nil) {
       				NSLog(@"error loading friends! %@", [error localizedDescription]);
-       				sendGameCenterEvent(ON_GET_PLAYER_FRIENDS_FAILURE, "{}", "", "", "");
+       				sendEventWrap(ON_GET_PLAYER_FRIENDS_FAILURE, "{}", "", "", "");
             	} 
 				if (friends != nil) {
 					NSString *dataJSONString = @"";
@@ -307,7 +310,7 @@ namespace gamecenter {
 					NSData *playersJSONData = [NSJSONSerialization dataWithJSONObject:playersData options:NSJSONWritingPrettyPrinted error:&error];
 					dataJSONString = [[NSString alloc] initWithData:playersJSONData encoding:NSUTF8StringEncoding] ;
 					const char* dataString = (const char*)[dataJSONString UTF8String]; 
-					sendGameCenterEvent(ON_GET_PLAYER_FRIENDS_SUCCESS, dataString, "", "", "");
+					sendEventWrap(ON_GET_PLAYER_FRIENDS_SUCCESS, dataString, "", "", "");
 					[dataJSONString release];
 				}
 			}];
@@ -322,13 +325,13 @@ namespace gamecenter {
 		[GKPlayer loadPlayersForIdentifiers:array withCompletionHandler:^(NSArray <GKPlayer *> *players, NSError *error){
 			if (error != nil) {
       			NSLog(@"error loading player! %@", [error localizedDescription]);
-       			sendGameCenterEvent(ON_GET_PLAYER_PHOTO_FAILURE, playerID, "", "", "");
+       			sendEventWrap(ON_GET_PLAYER_PHOTO_FAILURE, playerID, "", "", "");
             } 
             if (players != nil && [players count]>0) {
 				[[players firstObject] loadPhotoForSize:GKPhotoSizeNormal withCompletionHandler: ^(UIImage *photo, NSError *error2){
 					if (error2 != nil) {
       					NSLog(@"error loading photo! %@", [error2 localizedDescription]);
-       					sendGameCenterEvent(ON_GET_PLAYER_PHOTO_FAILURE, playerID, "", "", "");
+       					sendEventWrap(ON_GET_PLAYER_PHOTO_FAILURE, playerID, "", "", "");
             		} 
             		if(photo != nil){
             			NSData *photoData = UIImagePNGRepresentation(photo);
@@ -337,10 +340,10 @@ namespace gamecenter {
 						NSString *file = [NSString stringWithFormat:@"%@.png", [[players firstObject] playerID]];
 						NSString *path = [cachesFolder stringByAppendingPathComponent:file];
             			if([photoData writeToFile:path atomically:YES]){
-            				sendGameCenterEvent(ON_GET_PLAYER_PHOTO_SUCCESS, playerID, [path UTF8String], "", "");
+            				sendEventWrap(ON_GET_PLAYER_PHOTO_SUCCESS, playerID, [path UTF8String], "", "");
             			} else {
             				NSLog(@"error writing to file");
-            				sendGameCenterEvent(ON_GET_PLAYER_PHOTO_FAILURE, playerID, "", "", "");
+            				sendEventWrap(ON_GET_PLAYER_PHOTO_FAILURE, playerID, "", "", "");
             			}
             		} else {
             		} 
@@ -391,12 +394,12 @@ namespace gamecenter {
 					
 					NSLog (@"Game Center: Error occurred reporting score-");
 					NSLog (@"  %@", [error userInfo]);
-					sendGameCenterEvent (SCORE_FAILURE, categoryID, "", "", "");
+					sendEventWrap (SCORE_FAILURE, categoryID, "", "", "");
 					
 				} else {
 					
 					NSLog (@"Game Center: Score was successfully sent");
-					sendGameCenterEvent (SCORE_SUCCESS, categoryID, "", "", "");
+					sendEventWrap (SCORE_SUCCESS, categoryID, "", "", "");
 					
 				}
 				
@@ -420,14 +423,14 @@ namespace gamecenter {
 				// Handle the error.
 				NSLog (@"Game Center: Error occurred getting score-");
 				NSLog (@"  %@", [error userInfo]);				
-				sendGameCenterEvent (ON_GET_PLAYER_SCORE_FAILURE, leaderboardID, "", "", "");
+				sendEventWrap (ON_GET_PLAYER_SCORE_FAILURE, leaderboardID, "", "", "");
 			}
 			if (scores != nil) {
 				// Process the score information.
 				GKScore* localPlayerScore = leaderboardRequest.localPlayerScore;
 				NSString* myString = [NSString stringWithFormat:@"%lld", localPlayerScore.value];
 				NSLog (@"Game Center: Player score was successfully obtained");
-				sendGameCenterEvent (ON_GET_PLAYER_SCORE_SUCCESS, leaderboardID, [myString UTF8String], "", "");			
+				sendEventWrap (ON_GET_PLAYER_SCORE_SUCCESS, leaderboardID, [myString UTF8String], "", "");			
 			}
 		}];
 		[strLeaderboard release];	
@@ -462,11 +465,11 @@ namespace gamecenter {
 			if (error != nil) {
 				
 				NSLog (@"  %@", [error userInfo]);
-				sendGameCenterEvent (ACHIEVEMENT_RESET_FAILURE, "", "", "", "");
+				sendEventWrap (ACHIEVEMENT_RESET_FAILURE, "", "", "", "");
 				
 			} else {
 				
-				sendGameCenterEvent(ACHIEVEMENT_RESET_SUCCESS, "", "", "", "");
+				sendEventWrap(ACHIEVEMENT_RESET_SUCCESS, "", "", "", "");
 				
 			}
 			
@@ -505,12 +508,12 @@ namespace gamecenter {
 					
 					NSLog (@"Game Center: Error occurred reporting achievement-");
 					NSLog (@"  %@", [error userInfo]);
-					sendGameCenterEvent (ACHIEVEMENT_FAILURE, achievementID, "", "", "");
+					sendEventWrap (ACHIEVEMENT_FAILURE, achievementID, "", "", "");
 					
 				} else {
 					
 					NSLog (@"Game Center: Achievement report successfully sent");
-					sendGameCenterEvent (ACHIEVEMENT_SUCCESS, achievementID, "", "", "");
+					sendEventWrap (ACHIEVEMENT_SUCCESS, achievementID, "", "", "");
 					
 				}
 				
@@ -518,7 +521,7 @@ namespace gamecenter {
 			
 		} else {
 			
-			sendGameCenterEvent (ACHIEVEMENT_FAILURE, achievementID, "", "", "");
+			sendEventWrap (ACHIEVEMENT_FAILURE, achievementID, "", "", "");
 			
 		}
 		
@@ -535,7 +538,7 @@ namespace gamecenter {
 			if (error != nil) {
 				NSLog (@"Game Center: Error occurred getting achievements array-");
 				NSLog (@"  %@", [error userInfo]);				
-				sendGameCenterEvent (ON_GET_ACHIEVEMENT_PROGRESS_FAILURE, achievementID, "", "", "");
+				sendEventWrap (ON_GET_ACHIEVEMENT_PROGRESS_FAILURE, achievementID, "", "", "");
 			}
 			if (achievements != nil) {
 				// Process the array of achievements.
@@ -543,7 +546,7 @@ namespace gamecenter {
 					if ([achievement.identifier isEqualToString:strAchievementInput]) {
 						NSString* myString = [NSString stringWithFormat:@"%.2f", achievement.percentComplete];
 						NSLog (@"Game Center: Achievement percent was successfully obtained");
-						sendGameCenterEvent (ON_GET_ACHIEVEMENT_PROGRESS_SUCCESS, achievementID, [myString UTF8String], "", "");
+						sendEventWrap (ON_GET_ACHIEVEMENT_PROGRESS_SUCCESS, achievementID, [myString UTF8String], "", "");
 						return;
 					}
 				}
@@ -559,7 +562,7 @@ namespace gamecenter {
 			if (error != nil) {
 				NSLog (@"Game Center: Error occurred getting achievements array-");
 				NSLog (@"  %@", [error userInfo]);				
-				sendGameCenterEvent (ON_GET_ACHIEVEMENT_STATUS_FAILURE, achievementID, "", "", "");
+				sendEventWrap (ON_GET_ACHIEVEMENT_STATUS_FAILURE, achievementID, "", "", "");
 			}
 			if (achievements != nil) {
 				// Process the array of achievements.
@@ -568,11 +571,11 @@ namespace gamecenter {
 						if (achievement.completed) {
 							NSLog (@"Game Center: Achievement status was successfully obtained");
 							NSString* status = @"Completed";
-							sendGameCenterEvent (ON_GET_ACHIEVEMENT_STATUS_SUCCESS, achievementID, [status UTF8String], "", "");
+							sendEventWrap (ON_GET_ACHIEVEMENT_STATUS_SUCCESS, achievementID, [status UTF8String], "", "");
 						} else {
 							NSLog (@"Game Center: Achievement status was successfully obtained");
 							NSString* status = @"Not Completed";
-							sendGameCenterEvent (ON_GET_ACHIEVEMENT_STATUS_SUCCESS, achievementID, [status UTF8String], "", "");
+							sendEventWrap (ON_GET_ACHIEVEMENT_STATUS_SUCCESS, achievementID, [status UTF8String], "", "");
 						}
 					}
 					return;
@@ -606,12 +609,12 @@ namespace gamecenter {
 			
 			NSLog (@"Game Center: You are logged in to game center.");
 
-			sendGameCenterEvent (AUTH_SUCCESS, "", "", "", "");
+			sendEventWrap (AUTH_SUCCESS, "", "", "", "");
 
 		} else {
 			
 			NSLog (@"Game Center: You are NOT logged in to game center.");
-			sendGameCenterEvent (AUTH_FAILURE, "", "", "", "");
+			sendEventWrap (AUTH_FAILURE, "", "", "", "");
 			
 		}
 		
